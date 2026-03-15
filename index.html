@@ -44,10 +44,35 @@ body{
   background:#2c2c2c;
   border:none;
   color:white;
-  padding:12px;
-  border-radius:8px;
+  padding:10px 14px;    
+  border-radius:6px;
   cursor:pointer;
-  font-size:16px;
+  font-size:15px;
+  text-align:left;
+  position:relative;
+  transition:0.2s;
+}
+
+/* hover */
+.sidebar .topButtons button:hover{
+  background:#3a3a3a;
+}
+
+/* selected button */
+.sidebar .topButtons button.active{
+  background:#3a3a3a;
+}
+
+/* blue line indicator */
+.sidebar .topButtons button.active::before{
+  content:"";
+  position:absolute;
+  left:-20px;
+  top:0;
+  height:100%;
+  width:4px;
+  background:#3b82f6;
+  border-radius:4px;
 }
 .sidebar .topButtons button:hover{
   background:#444;
@@ -207,8 +232,8 @@ input[type=text]{
 <!-- SIDEBAR -->
 <div class="sidebar" id="menu">
   <div class="topButtons">
-    <button onclick="loadKana('hiragana')">Hiragana・ひらがな</button>
-    <button onclick="loadKana('katakana')">Katakana・カタカナ</button>
+    <button onclick="selectMenu(this); loadKana('hiragana')" class="active">Hiragana・ひらがな</button>
+    <button onclick="selectMenu(this); loadKana('katakana')">Katakana・カタカナ</button>
     <button onclick="startQuiz()" class="start-quiz">Start Quiz</button>
   </div>
 
@@ -263,6 +288,12 @@ const katakana={
 "ワ":"wa","ヲ":"wo","ン":"n"
 };
 
+function selectMenu(button){
+  const buttons = document.querySelectorAll(".topButtons button");
+  buttons.forEach(b => b.classList.remove("active"));
+  button.classList.add("active");
+}
+  
 const combined={...hiragana,...katakana};
 
 /* ===================== */
