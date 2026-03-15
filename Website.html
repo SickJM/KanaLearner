@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kana Trainer</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<style>
+/* ------------------------------ */
+/* GLOBAL */
+body{
+  margin:0;
+  font-family: 'Fredoka One', sans-serif;
+  background:#121212;
+  color:white;
+  display:flex;
+  height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:250px;
+  background:#1f1f1f;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:20px;
+  border-right:1px solid #333;
+}
+
+/* TOP BUTTONS */
+.sidebar .topButtons{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.sidebar .topButtons button{
+  background:#2c2c2c;
+  border:none;
+  color:white;
+  padding:12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:16px;
+}
+.sidebar .topButtons button:hover{
+  background:#444;
+}
+.sidebar .topButtons .start-quiz{
+  background-color:#4caf50;
+  color:white;
+}
+
+/* SOCIAL ICONS AT BOTTOM */
+.sidebar .social{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+}
+.sidebar .social a{
+  color:white;
+  font-size:24px;
+  transition:0.3s;
+}
+.sidebar .social a:hover{
+  color:#1da1f2;
+}
+
+/* ------------------------------ */
+/* MAIN CONTENT */
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:20px;
+  overflow-y:auto;
+}
+
+/* KANA BUTTONS GRID */
+.kana-grid{
+  display:grid;
+  grid-template-columns:repeat(6,60px);
+  gap:10px;
+  justify-content:center;
+  margin-top:20px;
+}
+.kana{
+  background:#222;
+  padding:12px;
+  cursor:pointer;
+  border-radius:12px;
+  font-size:20px;
+  transition:0.2s;
+  display:flex;
+  flex-direction:column;
+  align-items:center; /* centers kana and romaji */
+  justify-content:center;
+  white-space: pre-line; /* show line break for romaji */
+  text-align:center;
+}
+.kana.selected{
+  background:#4caf50;
+}
+
+/* ------------------------------ */
+/* QUIZ STYLES */
+.quiz{
+  text-align:center;
+}
+.bigKana{
+  font-size:100px;
+  margin-bottom:20px;
+}
+.answers{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+  max-width:400px;
+  margin:auto;
+}
+button, input[type=text]{
+  border-radius:8px;
+  transition:0.2s;
+}
+.kana:hover, button:hover, input[type=text]:focus{
+  transform:scale(1.05);
+}
+input[type=text]{
+  padding:12px;
+  font-size:18px;
+  width:250px;
+  background:#222;
+  border:none;
+  border-radius:8px;
+  color:white;
+  text-align:center;
+  margin-bottom:20px;
+}
+
+/* ------------------------------ */
+/* PROGRESS BAR */
+.progressContainer{
+  position:fixed;
+  left:10px;
+  top:50%;
+  transform:translateY(-50%);
+  width:25px;
+  height:300px;
+  background:#333;
+  border-radius:20px;
+  overflow:hidden;
+}
+.progressBar{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  background:#4caf50;
+  height:0%;
+  border-radius:20px 20px 0 0;
+}
+
+/* ------------------------------ */
+/* TOAST NOTIFICATION */
+.toast {
+  position: fixed;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e74c3c;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: 'Fredoka One', sans-serif;
+  min-width: 250px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 9999;
+  overflow: hidden;
+}
+.toastProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background-color: rgba(255,255,255,0.5);
+  transform-origin: left;
+  animation: progressAnim 3s linear forwards;
+}
+@keyframes progressAnim {
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="menu">
+  <div class="topButtons">
+    <button onclick="loadKana('hiragana')">Hiragana・ひらがな</button>
+    <button onclick="loadKana('katakana')">Katakana・カタカナ</button>
+    <button onclick="startQuiz()" class="start-quiz">Start Quiz</button>
+  </div>
+
+  <div class="social">
+    <a href="https://twitter.com/yourhandle" target="_blank"><i class="fab fa-twitter"></i></a>
+    <a href="https://github.com/yourhandle" target="_blank"><i class="fab fa-github"></i></a>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progressContainer" id="progressBox" style="display:none">
+  <div class="progressBar" id="bar"></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="main">
+<h2 id="setTitle">Hiragana</h2>
+<div id="kanaGrid" class="kana-grid"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast">
+  <span id="toastMsg"></span>
+  <div class="toastProgress" id="toastProgress"></div>
+</div>
+
+<script>
+/* ===================== */
+/* DATA */
+const hiragana={
+"あ":"a","い":"i","う":"u","え":"e","お":"o",
+"か":"ka","き":"ki","く":"ku","け":"ke","こ":"ko",
+"さ":"sa","し":"shi","す":"su","せ":"se","そ":"so",
+"た":"ta","ち":"chi","つ":"tsu","て":"te","と":"to",
+"な":"na","に":"ni","ぬ":"nu","ね":"ne","の":"no",
+"は":"ha","ひ":"hi","ふ":"fu","へ":"he","ほ":"ho",
+"ま":"ma","み":"mi","む":"mu","め":"me","も":"mo",
+"や":"ya","ゆ":"yu","よ":"yo",
+"ら":"ra","り":"ri","る":"ru","れ":"re","ろ":"ro",
+"わ":"wa","を":"wo","ん":"n"
+};
+
+const katakana={
+"ア":"a","イ":"i","ウ":"u","エ":"e","オ":"o",
+"カ":"ka","キ":"ki","ク":"ku","ケ":"ke","コ":"ko",
+"サ":"sa","シ":"shi","ス":"su","セ":"se","ソ":"so",
+"タ":"ta","チ":"chi","ツ":"tsu","テ":"te","ト":"to",
+"ナ":"na","ニ":"ni","ヌ":"nu","ネ":"ne","ノ":"no",
+"ハ":"ha","ヒ":"hi","フ":"fu","ヘ":"he","ホ":"ho",
+"マ":"ma","ミ":"mi","ム":"mu","メ":"me","モ":"mo",
+"ヤ":"ya","ユ":"yu","ヨ":"yo",
+"ラ":"ra","リ":"ri","ル":"ru","レ":"re","ロ":"ro",
+"ワ":"wa","ヲ":"wo","ン":"n"
+};
+
+const combined={...hiragana,...katakana};
+
+/* ===================== */
+/* STATE */
+let selectedHira=new Set();
+let selectedKata=new Set();
+let currentSet="hiragana";
+
+/* ===================== */
+/* LOAD PAGES */
+function loadKana(type){
+  currentSet=type;
+  document.getElementById("setTitle").textContent = type.charAt(0).toUpperCase() + type.slice(1);
+  const data = type==="hiragana"?hiragana:katakana;
+  const selected = type==="hiragana"?selectedHira:selectedKata;
+  renderGrid(data, selected);
+}
+
+function renderGrid(data, selected){
+  const grid = document.getElementById("kanaGrid");
+  grid.innerHTML="";
+  for(let k in data){
+    let div = document.createElement("div");
+    div.className="kana";
+    div.textContent=`${k}\n(${data[k]})`;
+    if(selected.has(k)) div.classList.add("selected");
+    div.onclick = () => {
+      if(selected.has(k)){ selected.delete(k); div.classList.remove("selected"); }
+      else{ selected.add(k); div.classList.add("selected"); }
+    };
+    grid.appendChild(div);
+  }
+}
+
+/* ===================== */
+/* TOAST */
+function showToast(message, duration=3000){
+  const toast = document.getElementById("toast");
+  const toastMsg = document.getElementById("toastMsg");
+  const toastProgress = document.getElementById("toastProgress");
+  toastMsg.textContent=message;
+  toastProgress.style.animation="none";
+  void toastProgress.offsetWidth; // trigger reflow
+  toastProgress.style.animation=`progressAnim ${duration}ms linear forwards`;
+  toast.style.bottom="30px";
+  setTimeout(()=>{ toast.style.bottom="-100px"; }, duration);
+}
+
+/* ===================== */
+/* QUIZ */
+let kanaListQuiz=[], stage=1, score=0, last="";
+
+function startQuiz(){
+  kanaListQuiz = [...selectedHira,...selectedKata];
+  if(kanaListQuiz.length<5){ showToast("Select at least 5 characters!",3000); return; }
+  stage=1; score=0; last="";
+  document.getElementById("menu").style.display="none";
+  document.getElementById("progressBox").style.display="block";
+  nextQuestion();
+}
+
+function returnMenu(){
+  document.getElementById("menu").style.display="flex";
+  document.getElementById("progressBox").style.display="none";
+  document.getElementById("main").innerHTML='<h2 id="setTitle">Hiragana</h2><div id="kanaGrid" class="kana-grid"></div>';
+  loadKana(currentSet);
+}
+
+function updateBar(){
+  let percent = (score/20)*100;
+  if(percent>100) percent=100;
+  if(percent<0) percent=0;
+  document.getElementById("bar").style.height = percent+"%";
+  if(score>=20){
+    stage++; score=0;
+    if(stage>3){ showToast("Training Complete!",3000); returnMenu(); }
+    else showToast(`Stage ${stage} unlocked!`,3000);
+  }
+}
+
+function randomKana(){
+  let k;
+  do{ k=kanaListQuiz[Math.floor(Math.random()*kanaListQuiz.length)]; }while(k===last);
+  last=k; return k;
+}
+
+function nextQuestion(){
+  if(stage===1) stage1();
+  else if(stage===2) stage2();
+  else if(stage===3) stage3();
+}
+
+/* Stage 1 - Multiple choice */
+function stage1(){
+  let k=randomKana();
+  document.getElementById("main").innerHTML=`
+  <div class="quiz">
+  <div class="bigKana">${k}</div>
+  <div class="answers" id="answers"></div>
+  <br><button onclick="returnMenu()">Return to Menu</button>
+  </div>`;
+  let correct=combined[k];
+  let options=[correct];
+  let all=Object.values(combined);
+  while(options.length<4){ let r=all[Math.floor(Math.random()*all.length)]; if(!options.includes(r)) options.push(r);}
+  options.sort(()=>Math.random()-0.5);
+  const ans=document.getElementById("answers");
+  options.forEach(o=>{
+    let b=document.createElement("button"); b.textContent=o;
+    b.onclick=()=>{ if(o===correct) score++; else{score--; showToast("Correct: "+correct,3000);}
+      updateBar(); nextQuestion(); };
+    ans.appendChild(b);
+  });
+}
+
+/* Stage 2 - Type romaji */
+function stage2(){
+  let k=randomKana();
+  document.getElementById("main").innerHTML=`
+  <div class="quiz">
+  <div class="bigKana">${k}</div>
+  <input type="text" id="input" placeholder="Type romaji">
+  <br><br><button onclick="submit2('${k}')">Submit</button>
+  <br><br><button onclick="returnMenu()">Return to Menu</button>
+  </div>`;
+  const input=document.getElementById("input");
+  input.focus();
+  input.addEventListener("keypress", function(e){ if(e.key==="Enter") submit2(k); });
+}
+
+function submit2(k){
+  const v=document.getElementById("input").value.toLowerCase();
+  let correct=combined[k];
+  if(v===correct) score++; else{score--; showToast("Correct: "+correct,3000);}
+  updateBar(); nextQuestion();
+}
+
+/* Stage 3 - Three characters */
+function stage3(){
+  let k1=randomKana(), k2=randomKana(), k3=randomKana();
+  let word=k1+k2+k3;
+  document.getElementById("main").innerHTML=`
+  <div class="quiz">
+  <div class="bigKana">${word}</div>
+  <input type="text" id="input" placeholder="Type full romaji">
+  <br><br><button onclick="submit3('${k1}','${k2}','${k3}')">Submit</button>
+  <br><br><button onclick="returnMenu()">Return to Menu</button>
+  </div>`;
+  const input=document.getElementById("input");
+  input.focus();
+  input.addEventListener("keypress", function(e){ if(e.key==="Enter") submit3(k1,k2,k3); });
+}
+
+function submit3(a,b,c){
+  let input=document.getElementById("input").value.toLowerCase();
+  let correct=combined[a]+combined[b]+combined[c];
+  if(input===correct) score++; else{score--; showToast("Correct: "+correct,3000);}
+  updateBar(); nextQuestion();
+}
+
+/* INIT */
+loadKana("hiragana");
+</script>
+</body>
+</html>
